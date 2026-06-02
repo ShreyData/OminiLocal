@@ -1,0 +1,11 @@
+langchain
+langchain-community
+langchain-experimental
+langchain-ollama
+langchain-classic
+ollama
+duckduckgo-search
+fastapi
+uvicorn
+pydantic
+python-dotenv
