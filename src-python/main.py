@@ -2,7 +2,8 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from agent.orchestrator import initialize_agent
+from agent.graph import app as graph_app
+from langchain_core.messages import HumanMessage
 
 app = FastAPI(title="OmniLocal AI Sidecar")
 
@@ -14,9 +15,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Initialize the agent once
-agent_executor = initialize_agent()
 
 class ChatRequest(BaseModel):
     message: str
@@ -31,15 +29,27 @@ async def chat(request: ChatRequest):
     Endpoint to receive user messages and return agent responses.
     """
     try:
-        # For simplicity, we execute synchronously for now.
-        # LangChain's invoke returns a dictionary with 'output' and 'intermediate_steps'.
-        response = agent_executor.invoke({"input": request.message})
+        # Initialize the AgentState
+        initial_state = {
+            "messages": [HumanMessage(content=request.message)],
+            "research_data": "",
+            "next_step": ""
+        }
         
-        # We can extract the thought process from intermediate_steps if needed
-        # But for now, let's just send the final answer.
+        # Invoke the LangGraph workflow
+        result = graph_app.invoke(initial_state)
+        
+        # Extract final answer from the last message
+        final_answer = result["messages"][-1].content
+        
+        # Extract thought process (research_data)
+        thought_process = result.get("research_data", "")
+        if not thought_process:
+            thought_process = "I analyzed your request locally."
+            
         return {
-            "thought_process": "Analysis completed.", # Placeholder for step extraction
-            "final_answer": response["output"]
+            "thought_process": thought_process,
+            "final_answer": final_answer
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
