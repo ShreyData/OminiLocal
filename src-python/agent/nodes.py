@@ -89,15 +89,22 @@ def stylist_node(state: AgentState):
             user_question = m.content
             break
             
-    stylist_prompt = (
+    system_instructions = (
         "You are a professional analyst and stylist. Your ONLY goal is to take the raw research data and the user's question and create a perfectly formatted answer.\n"
-        f"User Question: {user_question}\n"
-        f"Research Data: {research_data}\n"
         "Rules: Use bold, italics, ### headers, and Markdown tables for comparisons.\n"
         "Do not mention the tools or research process, just give the final answer."
     )
     
-    response = llm.invoke([SystemMessage(content=stylist_prompt)])
+    human_content = (
+        f"User Question: {user_question}\n\n"
+        f"Research Data gathered:\n{research_data}"
+    )
+    
+    # Using a list of [System, Human] is the most standard and safe way for Gemini
+    response = llm.invoke([
+        SystemMessage(content=system_instructions),
+        HumanMessage(content=human_content)
+    ])
     
     # Ensure it returns an AIMessage (which llm.invoke should return)
     return {

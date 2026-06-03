@@ -29,6 +29,7 @@ async def chat(request: ChatRequest):
     Endpoint to receive user messages and return agent responses.
     """
     try:
+        print(f"DEBUG: Received message: {request.message}")
         # Initialize the AgentState
         initial_state = {
             "messages": [HumanMessage(content=request.message)],
@@ -37,21 +38,32 @@ async def chat(request: ChatRequest):
         }
         
         # Invoke the LangGraph workflow
+        print("DEBUG: Invoking Graph...")
         result = graph_app.invoke(initial_state)
+        print("DEBUG: Graph invocation successful.")
         
         # Extract final answer from the last message
-        final_answer = result["messages"][-1].content
+        raw_answer = result["messages"][-1].content
+        # Ensure it is a string (Gemini sometimes returns a list of parts)
+        if isinstance(raw_answer, list):
+            final_answer = "\n".join([str(p.get("text", "")) if isinstance(p, dict) else str(p) for p in raw_answer])
+        else:
+            final_answer = str(raw_answer)
         
         # Extract thought process (research_data)
-        thought_process = result.get("research_data", "")
-        if not thought_process:
+        thought_process = str(result.get("research_data", ""))
+        if not thought_process or thought_process.strip() == "":
             thought_process = "I analyzed your request locally."
             
+        print(f"DEBUG: Sending response. Final Answer length: {len(final_answer)}")
         return {
             "thought_process": thought_process,
             "final_answer": final_answer
         }
     except Exception as e:
+        import traceback
+        print("DEBUG: ERROR IN CHAT ENDPOINT")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")

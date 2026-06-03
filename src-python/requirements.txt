@@ -2,12 +2,15 @@ langchain
 langchain-community
 langchain-experimental
 langchain-ollama
+langchain-google-genai
 langchain-classic
+langgraph
+langgraph-checkpoint
 ollama
 duckduckgo-search
+ddgs
 fastapi
 uvicorn
 pydantic
 python-dotenv
-langgraph
-langgraph-checkpoint
+google-generativeai

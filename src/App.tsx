@@ -40,10 +40,12 @@ function App() {
       if (!response.ok) throw new Error("Failed to reach assistant");
 
       const data = await response.json();
+      console.log("DEBUG: Received data from backend", data);
+
       const assistantMessage: Message = {
         role: "assistant",
-        content: data.final_answer,
-        thought: data.thought_process,
+        content: String(data.final_answer || "No response received from AI."),
+        thought: String(data.thought_process || ""),
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
